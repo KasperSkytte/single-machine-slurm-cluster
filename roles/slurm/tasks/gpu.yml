@@ -1,0 +1,95 @@
+---
+# NVIDIA GPU detection + driver/toolkit setup. has_gpus defaults to "auto"
+# (null) in group_vars/all.yml -- set it to true/false there to override
+# autodetection for this host.
+- name: Count NVIDIA GPUs present via lspci
+  ansible.builtin.shell: |
+    set -o pipefail
+    lspci -nn | grep -Ei '(VGA compatible controller|3D controller)' | grep -ci nvidia || true
+  args:
+    executable: /bin/bash
+  register: _lspci_nvidia
+  changed_when: false
+
+- name: Set gpu_count fact
+  ansible.builtin.set_fact:
+    gpu_count: "{{ _lspci_nvidia.stdout | trim | int }}"
+
+- name: Autodetect has_gpus when not explicitly set
+  ansible.builtin.set_fact:
+    has_gpus: "{{ gpu_count | int > 0 }}"
+  when: has_gpus is none
+
+- name: Show GPU detection result
+  ansible.builtin.debug:
+    msg: "has_gpus={{ has_gpus }} gpu_count={{ gpu_count }}"
+
+- name: Ensure ubuntu-drivers-common is present (for driver autoinstall)
+  ansible.builtin.apt:
+    name: ubuntu-drivers-common
+    state: present
+  when: has_gpus
+
+- name: Check whether an NVIDIA driver is already working
+  ansible.builtin.command: nvidia-smi -L
+  register: _nvidia_smi_check
+  changed_when: false
+  failed_when: false
+  when: has_gpus
+
+# Only bootstraps a fresh machine -- won't touch/upgrade a driver that's
+# already working, so it can't disrupt whatever version you already have
+# installed and running.
+- name: Auto-install the recommended NVIDIA driver (skipped if one already works)
+  ansible.builtin.command: ubuntu-drivers autoinstall
+  when: has_gpus and _nvidia_smi_check.rc != 0
+  register: _nvidia_autoinstall
+
+- name: Re-check the NVIDIA driver after autoinstall
+  ansible.builtin.command: nvidia-smi -L
+  register: _nvidia_smi_recheck
+  changed_when: false
+  failed_when: false
+  when: has_gpus and _nvidia_autoinstall is changed
+
+- name: Fail with an actionable message if a reboot is needed for the new driver
+  ansible.builtin.fail:
+    msg: >-
+      NVIDIA driver was just installed but isn't loaded yet (nvidia-smi
+      still fails) -- this almost always needs a reboot (new kernel
+      module, or replacing a conflicting nouveau load). Reboot the
+      machine and re-run the playbook.
+  when: has_gpus and _nvidia_autoinstall is changed and _nvidia_smi_recheck.rc != 0
+
+- name: Install NVML development headers (needed to build Slurm with GPU autodetect)
+  ansible.builtin.apt:
+    name: libnvidia-ml-dev
+    state: present
+  when: has_gpus
+
+- name: Download NVIDIA Container Toolkit GPG key
+  ansible.builtin.get_url:
+    url: https://nvidia.github.io/libnvidia-container/gpgkey
+    dest: /tmp/nvidia-container-toolkit-keyring.asc
+    mode: "0644"
+  when: has_gpus
+
+- name: Dearmor NVIDIA Container Toolkit GPG key
+  ansible.builtin.command: gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg /tmp/nvidia-container-toolkit-keyring.asc
+  args:
+    creates: /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+  when: has_gpus
+
+- name: Add NVIDIA Container Toolkit apt repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/$(ARCH) /"
+    filename: nvidia-container-toolkit
+    state: present
+  when: has_gpus
+
+- name: Install NVIDIA Container Toolkit
+  ansible.builtin.apt:
+    name: nvidia-container-toolkit
+    state: present
+    update_cache: true
+  when: has_gpus

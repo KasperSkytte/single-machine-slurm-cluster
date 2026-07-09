@@ -37,6 +37,17 @@ slurm_system_gid: 981
 mem_reserved_gb: 5
 
 # --------------------------------------------------------------------------
+# GPU support (NVIDIA only)
+# --------------------------------------------------------------------------
+# Auto-detected via lspci (see roles/slurm/tasks/gpu.yml). Set explicitly to
+# true or false here only if autodetection ever gets it wrong for your
+# hardware. When enabled: installs the NVIDIA driver (only if none is
+# already working -- won't touch/upgrade an existing one), NVML dev headers
+# (so Slurm is built with GPU autodetect support), and the NVIDIA Container
+# Toolkit; configures gres.conf/slurm.conf for GPU scheduling.
+has_gpus: ~
+
+# --------------------------------------------------------------------------
 # Per-job private /tmp, /var/tmp, /dev/shm (namespace/tmpfs, formerly
 # job_container/tmpfs -- renamed in Slurm 25.11). Each job gets its own,
 # emptied on job exit instead of sharing the host's /tmp.

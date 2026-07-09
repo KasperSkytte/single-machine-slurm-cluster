@@ -49,6 +49,16 @@
     - restart slurmctld
     - restart slurmd
 
+- name: Deploy gres.conf
+  ansible.builtin.template:
+    src: gres.conf.j2
+    dest: "{{ slurm_sysconfdir }}/gres.conf"
+    owner: root
+    group: "{{ slurm_group }}"
+    mode: "0644"
+  when: has_gpus
+  notify: restart slurmd
+
 - name: Deploy job_container.conf
   ansible.builtin.template:
     src: job_container.conf.j2
