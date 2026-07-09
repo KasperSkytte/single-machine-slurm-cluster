@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/KasperSkytte/single-machine-slurm-cluster/compare/slurm-ansible-v1.0.0...slurm-ansible-v1.1.0) (2026-07-09)
+
+
+### Features
+
+* auto-detect and configure NVIDIA GPUs for Slurm scheduling ([a7214ea](https://github.com/KasperSkytte/single-machine-slurm-cluster/commit/a7214ea2b66f60488bf715f0957cb11b5f8f3d76))
+* include GPU model in slurm.conf's Gres= line ([f024ab2](https://github.com/KasperSkytte/single-machine-slurm-cluster/commit/f024ab237014bf4eb712bea5d62a5d9af745abc9))
+
 ## 1.0.0 (2026-07-09)
 
 
