@@ -3,8 +3,8 @@
 # (MariaDB-backed accounting) + compute node, all on one host. Slurm is
 # built from source at a pinned version. cgroups (v2, autodetected) reserve
 # a fixed chunk of RAM for the host OS; the rest is available to jobs.
-# slurm-mail provides HTML job notification e-mails sent via Proton Mail's
-# SMTP submission.
+# slurm-mail provides HTML job notification e-mails sent via SMTP (any
+# provider -- Gmail, Proton Mail, a self-hosted relay, etc.).
 #
 # Usage: see README.md (Prerequisites) for one-time setup, then:
 #   ansible-playbook playbook.yml --ask-become-pass
@@ -20,3 +20,23 @@
   roles:
     - slurm
     - slurm_mail
+  tasks:
+    # install sstatus
+    - name: "Clone kasperskytte/sstatus repo"
+      ansible.builtin.git:
+        dest: "/usr/local/lib/sstatus"
+        repo: "https://github.com/kasperskytte/sstatus"
+        version: "main"
+        recursive: false
+        depth: 1
+        force: true
+        update: true
+      run_once: true
+    - name: "Symlink sstatus into /usr/local/bin/"
+      ansible.builtin.file:
+        src: "/usr/local/lib/sstatus/sstatus"
+        dest: "/usr/local/bin/sstatus"
+        state: link
+        mode: 0775
+        owner: root
+        group: root

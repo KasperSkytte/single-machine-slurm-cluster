@@ -87,16 +87,18 @@ slurm_mail_log_dir: /var/log/slurm-mail
 # slurm-spool-mail / slurm-send-mail console scripts on Debian/Ubuntu.
 slurm_mail_bin_dir: /usr/local/bin
 
-# Proton Mail native SMTP submission (requires a Proton plan with SMTP
-# submission enabled, plus an app password generated in Proton Mail
-# settings -> IMAP/SMTP). See README for details.
-proton_email: "kasper@cafekapper.dk"
-proton_smtp_server: smtp.protonmail.ch
-proton_smtp_port: 587
-# Generate with: ansible-vault encrypt_string --name vault_proton_smtp_password
-# and paste the resulting `vault_proton_smtp_password: !vault |` block here
+# SMTP relay slurm-mail sends through -- any provider works (Gmail, Proton
+# Mail, Fastmail, a self-hosted Postfix relay, SendGrid, ...). Some
+# providers require enabling SMTP access explicitly and/or an app-specific
+# password rather than your normal login password -- check your provider's
+# docs. See README for details.
+smtp_username: "kasper@cafekapper.dk"
+smtp_server: smtp.protonmail.ch
+smtp_port: 587
+# Generate with: ansible-vault encrypt_string --name vault_smtp_password
+# and paste the resulting `vault_smtp_password: !vault |` block here
 # in place of this placeholder. See README -> Prerequisites.
-vault_proton_smtp_password: !vault |
+vault_smtp_password: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           38383338353133653937633365623231363965613265326433386135323463633063393431623832
           3535303466643339383230343762333930356264656331340a316466366230616230616433393934
