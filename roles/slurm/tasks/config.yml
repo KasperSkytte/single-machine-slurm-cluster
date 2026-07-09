@@ -15,13 +15,16 @@
     group: root
     mode: "0644"
 
-# /etc/profile.d/*.sh only runs for login shells; aliases set there don't
-# reach normal interactive (non-login) shells, so also drop it in bashrc.
-- name: Make the sq alias available in non-login shells too
+# /etc/profile.d/*.sh only runs for login shells; VS Code's integrated and
+# Remote-SSH terminals (among others) start a non-login shell, so it never
+# sources it -- duplicate the same content into bashrc too. Rendered from
+# the same template as above (rather than copy-pasted) so the two can't
+# drift out of sync.
+- name: Make Slurm shell env available in non-login shells too
   ansible.builtin.blockinfile:
     path: /etc/bash.bashrc
     marker: "# {mark} ANSIBLE MANAGED BLOCK - slurm sq alias"
-    block: "alias sq='squeue --me'"
+    block: "{{ lookup('ansible.builtin.template', 'profile-slurm.sh.j2') }}"
     state: present
 
 - name: Deploy slurm.conf
