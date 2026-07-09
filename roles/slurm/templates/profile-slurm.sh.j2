@@ -1,5 +1,5 @@
 #!/bin/bash
 {{ ansible_managed | comment }}
-export SQUEUE_FORMAT="%.12i %.17j %.10u %.8a %.11M %.11L %.3C %.7m %.2t %.4Q %.11P %R"
+export SQUEUE_FORMAT="%.12i %.17j %.10u %.8a %.11M %.11L %.3C %.7m %.2t %R"
 export SINFO_FORMAT="%.11P %.5a %.10l %.14C %.9T %.12E %.6D %.15N %f"
 alias sq="squeue --me"
