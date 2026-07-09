@@ -1,16 +1,8 @@
-# Secrets -- never commit
 .vault_pass
-
-# biocloud/ is a separate, independently version-controlled project kept
-# here only as local reference material -- not part of this repo's history.
 biocloud/
-
-# Vendored/downloaded dependencies -- reinstalled per README Prerequisites
 mitogen-*/
 roles/galaxy/
 roles/collections/
-
-# Ansible / Python runtime artifacts
 *.retry
 __pycache__/
 *.pyc
