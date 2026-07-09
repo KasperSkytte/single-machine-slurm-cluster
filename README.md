@@ -29,8 +29,9 @@ Targets Ubuntu/Debian only (uses `apt`).
   `group_vars/all.yml` if needed) and, when found: installs the NVIDIA
   driver (only if none is already working), NVML dev headers so Slurm is
   built with GPU autodetect support, and the NVIDIA Container Toolkit; then
-  configures `gres.conf`/`slurm.conf` so the GPU is schedulable
-  (`--gres=gpu:1`).
+  configures `gres.conf`/`slurm.conf` so the GPU is schedulable, with its
+  model as the GRES type (e.g. `--gres=gpu:geforce_rtx_4090:1`) so you can
+  request a specific model if the node ever has more than one kind.
 
 ## Prerequisites
 

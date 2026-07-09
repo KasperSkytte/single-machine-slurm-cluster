@@ -22,9 +22,11 @@ SwitchType=switch/none
 TaskPlugin=task/affinity,task/cgroup
 
 {% if has_gpus %}
-# GPU scheduling -- see gres.conf (AutoDetect=nvml). Gres=gpu:N on the
-# NodeName line below is still required even with AutoDetect=nvml; it's
-# what tells slurmctld how many GPU GRES to expect on this node.
+# GPU scheduling -- see gres.conf (AutoDetect=nvml). The Gres= line below
+# (per-model type:count, e.g. gpu:geforce_rtx_4090:1) is still required
+# even with AutoDetect=nvml; it's what tells slurmctld how many GRES of
+# each GPU model to expect, and lets jobs request a specific model with
+# --gres=gpu:<type>:<count> when the node has more than one kind.
 GresTypes=gpu
 {% endif %}
 
@@ -77,6 +79,6 @@ MailProg={{ slurm_mail_bin_dir }}/slurm-spool-mail
 # RealMemory is the *total* installed RAM; MemSpecLimit is carved out of it
 # for the host OS + slurmd/slurmstepd and is never handed out to jobs.
 # ConstrainRAMSpace=yes in cgroup.conf enforces this at the cgroup level.
-NodeName={{ ansible_hostname }} Sockets={{ ansible_processor_count }} CoresPerSocket={{ ansible_processor_cores }} ThreadsPerCore={{ ansible_processor_threads_per_core }} RealMemory={{ ansible_memtotal_mb }} MemSpecLimit={{ mem_reserved_gb * 1024 }}{{ " Gres=gpu:" ~ gpu_count if has_gpus else "" }} State=UNKNOWN
+NodeName={{ ansible_hostname }} Sockets={{ ansible_processor_count }} CoresPerSocket={{ ansible_processor_cores }} ThreadsPerCore={{ ansible_processor_threads_per_core }} RealMemory={{ ansible_memtotal_mb }} MemSpecLimit={{ mem_reserved_gb * 1024 }}{{ " Gres=" ~ gpu_gres if has_gpus else "" }} State=UNKNOWN
 
 PartitionName=main Nodes={{ ansible_hostname }} Default=YES MaxTime=INFINITE State=UP

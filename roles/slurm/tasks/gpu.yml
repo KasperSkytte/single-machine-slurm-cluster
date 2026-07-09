@@ -67,6 +67,39 @@
     state: present
   when: has_gpus
 
+# Builds the Gres= value slurm.conf needs to make specific GPU models
+# selectable (e.g. --gres=gpu:geforce_rtx_4090:1) when there's more than
+# one on the node. Type is normalized the same way Slurm's own GPU
+# autodetect names devices (lowercased, non-alnum runs -> "_"), minus the
+# "nvidia_" prefix -- dropping it still leaves a valid substring match
+# against whatever the AutoDetect backend reports (nvml vs. the newer,
+# nvml-free "nvidia" backend format that name differently), which is all
+# Slurm requires per gres.conf(5).
+- name: Determine per-model GPU counts for Gres=
+  ansible.builtin.shell: |
+    set -o pipefail
+    nvidia-smi --query-gpu=name --format=csv,noheader \
+      | sed -e 's/^NVIDIA //I' -e 's/[^A-Za-z0-9]\+/_/g' \
+      | tr 'A-Z' 'a-z' \
+      | sort | uniq -c \
+      | awk '{printf "gpu:%s:%d,", $2, $1}' \
+      | sed 's/,$//'
+  args:
+    executable: /bin/bash
+  register: _gpu_names
+  changed_when: false
+  failed_when: false
+  when: has_gpus
+
+- name: Set gpu_gres fact
+  ansible.builtin.set_fact:
+    gpu_gres: "{{ _gpu_names.stdout | trim if (has_gpus and _gpu_names.stdout | trim) else 'gpu:' ~ gpu_count }}"
+
+- name: Show GPU Gres= value
+  ansible.builtin.debug:
+    msg: "gpu_gres={{ gpu_gres }}"
+  when: has_gpus
+
 - name: Download NVIDIA Container Toolkit GPG key
   ansible.builtin.get_url:
     url: https://nvidia.github.io/libnvidia-container/gpgkey
