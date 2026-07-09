@@ -1,0 +1,94 @@
+---
+# --------------------------------------------------------------------------
+# Cluster identity
+# --------------------------------------------------------------------------
+cluster_name: "hurtigcluster"
+
+# --------------------------------------------------------------------------
+# Slurm version + build
+# --------------------------------------------------------------------------
+# Pin the exact release to build. Check https://www.schedmd.com/downloads/
+# (or `git ls-remote --tags https://github.com/SchedMD/slurm.git`) for
+# newer releases and bump this yourself when you want to upgrade.
+slurm_version: "26.05.1"
+# Force a rebuild even if `slurmd --version` already matches slurm_version
+# (e.g. after changing configure flags or build dependencies).
+slurm_force_rebuild: false
+
+slurm_src_dir: /usr/local/src/slurm
+# /usr/local so binaries land in /usr/local/bin & /usr/local/sbin, which are
+# already on $PATH for everyone -- no separate profile.d shim needed.
+slurm_prefix: /usr/local
+slurm_sysconfdir: /etc/slurm
+
+slurm_user: slurm
+slurm_group: slurm
+slurm_system_uid: 981
+slurm_system_gid: 981
+
+# --------------------------------------------------------------------------
+# Memory reservation for the host OS
+# --------------------------------------------------------------------------
+# Amount of RAM (in GiB) that is NEVER handed out to Slurm jobs. This is
+# enforced two ways: MemSpecLimit in slurm.conf (reserves it + confines
+# slurmd/slurmstepd to it) and ConstrainRAMSpace in cgroup.conf (hard-caps
+# total job memory via cgroups so jobs collectively can't exceed
+# RealMemory - MemSpecLimit).
+mem_reserved_gb: 5
+
+# --------------------------------------------------------------------------
+# Per-job private /tmp, /var/tmp, /dev/shm (namespace/tmpfs, formerly
+# job_container/tmpfs -- renamed in Slurm 25.11). Each job gets its own,
+# emptied on job exit instead of sharing the host's /tmp.
+# --------------------------------------------------------------------------
+slurm_job_container_tmpfs_enable: true
+slurm_job_container_tmpfs_basepath: /var/lib/slurm/job_container_tmpfs
+slurm_job_container_tmpfs_dirs: "/tmp,/var/tmp,/dev/shm"
+slurm_job_container_tmpfs_shared: true
+
+# --------------------------------------------------------------------------
+# Accounting database (MariaDB, used by slurmdbd)
+# --------------------------------------------------------------------------
+mysql_slurm_db: slurm_acct_db
+mysql_slurm_user: slurm
+# Generate with: ansible-vault encrypt_string --name vault_mysql_slurm_password
+# and paste the resulting `vault_mysql_slurm_password: !vault |` block here
+# in place of this placeholder. See README -> Prerequisites.
+vault_mysql_slurm_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          62653637616465353831633566653535303761663364613966633165626137663661663863333139
+          6332616337323266353365396230323939373130623030620a386363306236373430373730613639
+          61383537623565336562393466326636303936663138656264383865636465386134636261333535
+          3038343937303435610a383135326338653661346466363036626639626430356632313038376239
+          64633664653565323161613766343265343931653832633237396234643162396461
+
+# --------------------------------------------------------------------------
+# slurm-mail (https://github.com/neilmunday/slurm-mail)
+# --------------------------------------------------------------------------
+# Pin the exact release tag to build. Check
+# https://github.com/neilmunday/slurm-mail/tags for newer releases.
+slurm_mail_version: "v4.34"
+slurm_mail_src_dir: /usr/local/src/slurm-mail
+slurm_mail_conf_dir: /etc/slurm-mail
+slurm_mail_spool_dir: /var/spool/slurm-mail
+slurm_mail_log_dir: /var/log/slurm-mail
+# Where `python3 setup.py install` (run as root, system Python) places the
+# slurm-spool-mail / slurm-send-mail console scripts on Debian/Ubuntu.
+slurm_mail_bin_dir: /usr/local/bin
+
+# Proton Mail native SMTP submission (requires a Proton plan with SMTP
+# submission enabled, plus an app password generated in Proton Mail
+# settings -> IMAP/SMTP). See README for details.
+proton_email: "kasper@cafekapper.dk"
+proton_smtp_server: smtp.protonmail.ch
+proton_smtp_port: 587
+# Generate with: ansible-vault encrypt_string --name vault_proton_smtp_password
+# and paste the resulting `vault_proton_smtp_password: !vault |` block here
+# in place of this placeholder. See README -> Prerequisites.
+vault_proton_smtp_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          38383338353133653937633365623231363965613265326433386135323463633063393431623832
+          3535303466643339383230343762333930356264656331340a316466366230616230616433393934
+          33656663663530343236386534363564353964396630323234636630303934333930336364393336
+          3761386563356366660a313230623934623936636237663666383433303536633937373762393039
+          30366262376461356162313237393639613235363632376162626430623039323638

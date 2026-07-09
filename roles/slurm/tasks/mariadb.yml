@@ -1,0 +1,34 @@
+---
+- name: Install MariaDB packages
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+    name:
+      - mariadb-server
+      - mariadb-client
+      - python3-pymysql
+    state: present
+
+- name: Enable and start MariaDB
+  ansible.builtin.systemd:
+    name: mariadb
+    enabled: true
+    state: started
+
+- name: Create Slurm accounting database
+  community.mysql.mysql_db:
+    name: "{{ mysql_slurm_db }}"
+    encoding: utf8mb4
+    login_user: root
+    login_unix_socket: /run/mysqld/mysqld.sock
+    state: present
+
+- name: Create Slurm accounting DB user
+  community.mysql.mysql_user:
+    name: "{{ mysql_slurm_user }}"
+    password: "{{ vault_mysql_slurm_password }}"
+    priv: "{{ mysql_slurm_db }}.*:ALL"
+    host: localhost
+    login_user: root
+    login_unix_socket: /run/mysqld/mysqld.sock
+    state: present

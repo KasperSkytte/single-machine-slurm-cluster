@@ -1,0 +1,31 @@
+{{ ansible_managed | comment }}
+[common]
+spoolDir = {{ slurm_mail_spool_dir }}
+
+[slurm-spool-mail]
+logFile = {{ slurm_mail_log_dir }}/slurm-spool-mail.log
+verbose = false
+
+[slurm-send-mail]
+logFile = {{ slurm_mail_log_dir }}/slurm-send-mail.log
+verbose = false
+arrayMaxNotifications = 0
+emailFromUserAddress = {{ proton_email }}
+emailFromName = Slurm ({{ cluster_name }})
+emailRegEx = \b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b
+emailSubject = $CLUSTER job $JOB_ID: $STATE
+gecosNameField = 0
+validateEmail = false
+datetimeFormat = %d/%m/%Y %H:%M:%S
+sacctExe = {{ slurm_prefix }}/bin/sacct
+scontrolExe = {{ slurm_prefix }}/bin/scontrol
+smtpServer = {{ proton_smtp_server }}
+smtpPort = {{ proton_smtp_port }}
+smtpUseTls = yes
+smtpUseSsl = no
+smtpUserName = {{ proton_email }}
+smtpPassword = {{ vault_proton_smtp_password }}
+retryOnFailure = yes
+retryDelay = 0
+tailExe = /usr/bin/tail
+includeOutputLines = 0

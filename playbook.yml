@@ -1,0 +1,22 @@
+---
+# Single-node Slurm "all-in-one" cluster: login node + controller + slurmdbd
+# (MariaDB-backed accounting) + compute node, all on one host. Slurm is
+# built from source at a pinned version. cgroups (v2, autodetected) reserve
+# a fixed chunk of RAM for the host OS; the rest is available to jobs.
+# slurm-mail provides HTML job notification e-mails sent via Proton Mail's
+# SMTP submission.
+#
+# Usage: see README.md (Prerequisites) for one-time setup, then:
+#   ansible-playbook playbook.yml --ask-become-pass
+#
+- name: Slurm all-in-one (login + controller + dbd + compute)
+  hosts: slurm_allinone
+  become: true
+
+  # Order matters: the "slurm" role creates the slurm user/group that
+  # slurm_mail needs to own its spool/log dirs. slurm.conf's MailProg
+  # points at a fixed, well-known path (slurm_mail_bin_dir) rather than a
+  # path discovered from slurm_mail, so slurm_mail can safely run last.
+  roles:
+    - slurm
+    - slurm_mail

@@ -1,0 +1,5 @@
+{{ ansible_managed | comment }}
+AutoBasePath=true
+BasePath={{ slurm_job_container_tmpfs_basepath }}
+Dirs={{ slurm_job_container_tmpfs_dirs }}
+Shared={{ slurm_job_container_tmpfs_shared | lower }}

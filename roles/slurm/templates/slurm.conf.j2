@@ -1,0 +1,72 @@
+{{ ansible_managed | comment }}
+#
+# slurm.conf - single-node "all-in-one" cluster (login + controller + db + compute)
+#
+ClusterName={{ cluster_name }}
+SlurmctldHost={{ ansible_hostname }}
+
+AuthType=auth/munge
+CredType=cred/munge
+MpiDefault=none
+ProctrackType=proctrack/cgroup
+ReturnToService=1
+
+SlurmUser={{ slurm_user }}
+SlurmctldPidFile=/run/slurmctld/slurmctld.pid
+SlurmctldPort=6817
+SlurmdPidFile=/run/slurm/slurmd.pid
+SlurmdPort=6818
+SlurmdSpoolDir=/var/spool/slurmd
+StateSaveLocation=/var/spool/slurmctld
+SwitchType=switch/none
+TaskPlugin=task/affinity,task/cgroup
+
+{% if slurm_job_container_tmpfs_enable %}
+# Private per-job /tmp, /var/tmp, /dev/shm (namespace/tmpfs plugin -- this
+# was named job_container/tmpfs before Slurm 25.11). See job_container.conf.
+PrologFlags=Contain
+NamespaceType=namespace/tmpfs
+{% endif %}
+
+# SCHEDULING
+SchedulerType=sched/backfill
+SelectType=select/cons_tres
+SelectTypeParameters=CR_Core_Memory
+MaxJobCount=1000
+MaxArraySize=1000
+OverTimeLimit=0
+LaunchParameters=use_interactive_step
+X11Parameters=home_xauthority
+JobRequeue=1
+DependencyParameters=kill_invalid_depend
+
+# RPC RATE LIMITS + MISC
+SlurmctldParameters=rl_enable,rl_bucket_size=100,rl_refill_period=1,rl_refill_rate=10,user_resv_delete
+
+# RESOURCES
+DefMemPerNode=512
+
+# LOGGING & ACCOUNTING
+SlurmctldDebug=info
+SlurmctldLogFile=/var/log/slurm/slurmctld.log
+SlurmdDebug=info
+SlurmdLogFile=/var/log/slurm/slurmd.log
+
+AccountingStorageType=accounting_storage/slurmdbd
+AccountingStorageHost=localhost
+AccountingStoragePort=6819
+AccountingStorageEnforce=associations,limits,qos
+JobAcctGatherType=jobacct_gather/cgroup
+JobAcctGatherFrequency=30
+
+
+# MAIL NOTIFICATIONS (handled by slurm-mail)
+MailProg={{ slurm_mail_bin_dir }}/slurm-spool-mail
+
+# COMPUTE NODE(S)
+# RealMemory is the *total* installed RAM; MemSpecLimit is carved out of it
+# for the host OS + slurmd/slurmstepd and is never handed out to jobs.
+# ConstrainRAMSpace=yes in cgroup.conf enforces this at the cgroup level.
+NodeName={{ ansible_hostname }} Sockets={{ ansible_processor_count }} CoresPerSocket={{ ansible_processor_cores }} ThreadsPerCore={{ ansible_processor_threads_per_core }} RealMemory={{ ansible_memtotal_mb }} MemSpecLimit={{ mem_reserved_gb * 1024 }} State=UNKNOWN
+
+PartitionName=main Nodes={{ ansible_hostname }} Default=YES MaxTime=INFINITE State=UP

@@ -1,0 +1,5 @@
+---
+- ansible.builtin.import_tasks: munge.yml
+- ansible.builtin.import_tasks: mariadb.yml
+- ansible.builtin.import_tasks: build.yml
+- ansible.builtin.import_tasks: config.yml

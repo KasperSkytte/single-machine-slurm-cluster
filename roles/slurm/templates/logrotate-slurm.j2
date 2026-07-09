@@ -1,0 +1,10 @@
+/var/log/slurm/*.log
+{
+    missingok
+    weekly
+    compress
+    rotate 8
+    postrotate
+        /usr/bin/pkill -x -HUP slurmctld slurmd slurmdbd 2>/dev/null || true
+    endscript
+}

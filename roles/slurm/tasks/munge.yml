@@ -1,0 +1,36 @@
+---
+- name: Install munge packages
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+    name:
+      - munge
+      - libmunge2
+      - libmunge-dev
+    state: present
+
+- name: Check for existing munge key
+  ansible.builtin.stat:
+    path: /etc/munge/munge.key
+  register: _munge_key
+
+- name: Generate munge key
+  when: not _munge_key.stat.exists
+  block:
+    - name: Create random munge key
+      ansible.builtin.shell: dd if=/dev/urandom of=/etc/munge/munge.key bs=1 count=1024
+      args:
+        executable: /bin/bash
+
+    - name: Fix munge key ownership/permissions
+      ansible.builtin.file:
+        path: /etc/munge/munge.key
+        owner: munge
+        group: munge
+        mode: "0400"
+
+- name: Enable and start munge
+  ansible.builtin.systemd:
+    name: munge
+    enabled: true
+    state: started

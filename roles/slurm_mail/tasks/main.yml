@@ -1,0 +1,71 @@
+---
+- name: Install slurm-mail build/runtime dependencies
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+    name:
+      - git
+      - python3-pip
+      - python3-setuptools
+      - python3-dev
+    state: present
+
+- name: Clone slurm-mail {{ slurm_mail_version }}
+  ansible.builtin.git:
+    repo: https://github.com/neilmunday/slurm-mail.git
+    dest: "{{ slurm_mail_src_dir }}"
+    version: "{{ slurm_mail_version }}"
+
+- name: Install slurm-mail (skipped if already installed)
+  ansible.builtin.shell: |
+    set -e
+    python3 setup.py install
+    touch "{{ slurm_mail_src_dir }}/.installed-{{ slurm_mail_version }}"
+  args:
+    chdir: "{{ slurm_mail_src_dir }}"
+    executable: /bin/bash
+    creates: "{{ slurm_mail_src_dir }}/.installed-{{ slurm_mail_version }}"
+
+- name: Verify slurm-mail scripts landed where slurm.conf expects them
+  ansible.builtin.stat:
+    path: "{{ slurm_mail_bin_dir }}/{{ item }}"
+  register: _slurm_mail_bin_check
+  loop:
+    - slurm-spool-mail
+    - slurm-send-mail
+  failed_when: not _slurm_mail_bin_check.stat.exists
+
+- name: Create slurm-mail spool and log directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ slurm_user }}"
+    group: "{{ slurm_group }}"
+    mode: "0700"
+  loop:
+    - "{{ slurm_mail_spool_dir }}"
+    - "{{ slurm_mail_log_dir }}"
+
+- name: Deploy slurm-mail configuration
+  ansible.builtin.template:
+    src: slurm-mail.conf.j2
+    dest: "{{ slurm_mail_conf_dir }}/slurm-mail.conf"
+    owner: root
+    group: "{{ slurm_group }}"
+    mode: "0640"
+
+- name: Deploy slurm-mail cron job (runs every minute)
+  ansible.builtin.template:
+    src: cron-slurm-mail.j2
+    dest: /etc/cron.d/slurm-mail
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Deploy slurm-mail logrotate config
+  ansible.builtin.template:
+    src: logrotate-slurm-mail.j2
+    dest: /etc/logrotate.d/slurm-mail
+    owner: root
+    group: root
+    mode: "0644"
