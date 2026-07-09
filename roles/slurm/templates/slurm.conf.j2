@@ -72,8 +72,10 @@ JobAcctGatherType=jobacct_gather/cgroup
 JobAcctGatherFrequency=30
 
 
+{% if slurm_mail_enable %}
 # MAIL NOTIFICATIONS (handled by slurm-mail)
 MailProg={{ slurm_mail_bin_dir }}/slurm-spool-mail
+{% endif %}
 
 # COMPUTE NODE(S)
 # RealMemory is the *total* installed RAM; MemSpecLimit is carved out of it

@@ -24,7 +24,11 @@ Targets Ubuntu/Debian only (uses `apt`).
   `ConstrainRAMSpace=yes`; everything else is schedulable by Slurm jobs.
 - Installs [slurm-mail](https://github.com/neilmunday/slurm-mail) (version
   pinned by `slurm_mail_version`) and wires it up as `MailProg`, configured
-  to relay through the SMTP server/account you provide.
+  to relay through the SMTP server/account you provide. Optional — set
+  `slurm_mail_enable: false` in `group_vars/all.yml` to skip it entirely
+  (e.g. if you don't have an SMTP account to relay through); `slurm.conf`
+  then leaves `MailProg` unset and Slurm falls back to its own
+  compiled-in default.
 - Detects an NVIDIA GPU via `lspci` (override with `has_gpus` in
   `group_vars/all.yml` if needed) and, when found: installs the NVIDIA
   driver (only if none is already working), NVML dev headers so Slurm is
@@ -47,19 +51,24 @@ Targets Ubuntu/Debian only (uses `apt`).
    tar zxf mitogen-0.3.22.tar.gz
    rm mitogen-0.3.22.tar.gz
    ```
-2. An SMTP account to send job notification mail through -- any provider
-   works (Gmail, Proton Mail, Fastmail, a self-hosted Postfix relay,
-   SendGrid, ...). You'll need its server hostname, port, a username, and a
+2. (Skip if you set `slurm_mail_enable: false` -- see below.) An SMTP
+   account to send job notification mail through -- any provider works
+   (Gmail, Proton Mail, Fastmail, a self-hosted Postfix relay, SendGrid,
+   ...). You'll need its server hostname, port, a username, and a
    password. Some providers require explicitly enabling SMTP
    access/submission and/or generating an app-specific password rather than
    using your normal login password -- check your provider's docs.
 3. Edit `group_vars/all.yml`:
    - `cluster_name`
    - `mem_reserved_gb` — GiB to always keep free for the host OS
+   - `slurm_mail_enable` — set to `false` if you don't want job
+     notification e-mails at all (e.g. no SMTP account handy); skip the
+     rest of this step and step 4's `vault_smtp_password` if so
    - `smtp_username` — your SMTP account's address (used as both the SMTP
      username and the mail's From address), `smtp_server`, `smtp_port`
 4. Encrypt the two secrets **in place**, directly inside `group_vars/all.yml`
-   — there's no separate vault file to manage:
+   — there's no separate vault file to manage (only the first is needed if
+   `slurm_mail_enable: false`):
    ```
    ansible-vault encrypt_string --name vault_mysql_slurm_password
    ansible-vault encrypt_string --name vault_smtp_password

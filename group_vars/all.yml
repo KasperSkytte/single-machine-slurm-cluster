@@ -76,6 +76,12 @@ vault_mysql_slurm_password: !vault |
 # --------------------------------------------------------------------------
 # slurm-mail (https://github.com/neilmunday/slurm-mail)
 # --------------------------------------------------------------------------
+# Set to false to skip the slurm_mail role entirely and leave slurm.conf's
+# MailProg unset (Slurm falls back to its own compiled-in default), e.g.
+# if you don't have an SMTP account to relay through. The vars below are
+# only used when this is true.
+slurm_mail_enable: true
+
 # Pin the exact release tag to build. Check
 # https://github.com/neilmunday/slurm-mail/tags for newer releases.
 slurm_mail_version: "v4.34"

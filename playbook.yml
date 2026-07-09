@@ -17,9 +17,11 @@
   # slurm_mail needs to own its spool/log dirs. slurm.conf's MailProg
   # points at a fixed, well-known path (slurm_mail_bin_dir) rather than a
   # path discovered from slurm_mail, so slurm_mail can safely run last.
+  # slurm_mail_enable (group_vars/all.yml) makes the whole role optional.
   roles:
     - slurm
-    - slurm_mail
+    - role: slurm_mail
+      when: slurm_mail_enable
   tasks:
     # install sstatus
     - name: "Clone kasperskytte/sstatus repo"
