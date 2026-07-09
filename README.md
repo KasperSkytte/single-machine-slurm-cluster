@@ -5,8 +5,9 @@ Sets up one machine to act simultaneously as login node, controller
 (`slurmd`). Slurm is built from source at a pinned version.
 Job memory is capped via cgroups so the host OS always keeps a fixed amount
 of free RAM. Job notification e-mails are sent through
-[slurm-mail](https://github.com/neilmunday/slurm-mail) via Proton Mail's
-SMTP submission.
+[slurm-mail](https://github.com/neilmunday/slurm-mail) over SMTP -- any
+provider works (Gmail, Proton Mail, a self-hosted relay, ...). NVIDIA GPUs
+are auto-detected and made schedulable.
 
 Targets Ubuntu/Debian only (uses `apt`).
 
@@ -23,30 +24,13 @@ Targets Ubuntu/Debian only (uses `apt`).
   `ConstrainRAMSpace=yes`; everything else is schedulable by Slurm jobs.
 - Installs [slurm-mail](https://github.com/neilmunday/slurm-mail) (version
   pinned by `slurm_mail_version`) and wires it up as `MailProg`, configured
-  to relay through Proton Mail's SMTP submission service.
-
-## Layout
-
-```
-playbook.yml              # just wires up the roles below, in order
-group_vars/all.yml        # all vars, incl. vault-encrypted secrets in place
-roles/
-  slurm/
-    tasks/
-      main.yml            # imports the four files below, in order
-      munge.yml           # auth key generation, munge service
-      mariadb.yml          # MariaDB server + slurm_acct_db + slurm DB user
-      build.yml           # builds & installs Slurm from source, slurm user/dirs
-      config.yml          # slurm.conf/cgroup.conf/slurmdbd.conf + starts daemons
-  slurm_mail/              # builds slurm-mail, SMTP config, cron, logrotate
-```
-
-Roles run in a fixed order (see `playbook.yml`): `slurm_mail` needs the
-`slurm` user created by the `slurm` role's `build.yml`, so it runs last.
-`slurm.conf`'s `MailProg` points at a fixed path (`slurm_mail_bin_dir`,
-default `/usr/local/bin`) rather than something discovered from
-`slurm_mail`, which is what lets `slurm_mail` safely run after the `slurm`
-role instead of being interleaved with it.
+  to relay through the SMTP server/account you provide.
+- Detects an NVIDIA GPU via `lspci` (override with `has_gpus` in
+  `group_vars/all.yml` if needed) and, when found: installs the NVIDIA
+  driver (only if none is already working), NVML dev headers so Slurm is
+  built with GPU autodetect support, and the NVIDIA Container Toolkit; then
+  configures `gres.conf`/`slurm.conf` so the GPU is schedulable
+  (`--gres=gpu:1`).
 
 ## Prerequisites
 
@@ -62,21 +46,22 @@ role instead of being interleaved with it.
    tar zxf mitogen-0.3.22.tar.gz
    rm mitogen-0.3.22.tar.gz
    ```
-2. A Proton Mail plan with **SMTP submission** enabled (Settings -> your
-   address -> IMAP/SMTP), and an app password generated there. Proton's
-   free plan does not support this — you need a paid plan with the feature
-   turned on. This is a full mailbox address you send *from*, not just an
-   alias.
+2. An SMTP account to send job notification mail through -- any provider
+   works (Gmail, Proton Mail, Fastmail, a self-hosted Postfix relay,
+   SendGrid, ...). You'll need its server hostname, port, a username, and a
+   password. Some providers require explicitly enabling SMTP
+   access/submission and/or generating an app-specific password rather than
+   using your normal login password -- check your provider's docs.
 3. Edit `group_vars/all.yml`:
    - `cluster_name`
    - `mem_reserved_gb` — GiB to always keep free for the host OS
-   - `proton_email` — your Proton address (used as both SMTP username and
-     the mail's From address)
+   - `smtp_username` — your SMTP account's address (used as both the SMTP
+     username and the mail's From address), `smtp_server`, `smtp_port`
 4. Encrypt the two secrets **in place**, directly inside `group_vars/all.yml`
    — there's no separate vault file to manage:
    ```
    ansible-vault encrypt_string --name vault_mysql_slurm_password
-   ansible-vault encrypt_string --name vault_proton_smtp_password
+   ansible-vault encrypt_string --name vault_smtp_password
    ```
    Leave off the plaintext argument so each one prompts interactively
    instead of landing in your shell history (it'll ask you to confirm by
@@ -117,7 +102,7 @@ daemons.
 
 ```
 sinfo                      # should show your node in state "idle"
-sbatch --wrap="sleep 30" --mail-type=ALL --mail-user=you@proton.me
+sbatch --wrap="sleep 30" --mail-type=ALL --mail-user=you@example.com
 squeue
 sacct
 ```
@@ -147,11 +132,12 @@ up to a minute for delivery after a job event.
   `CoreSpecCount=N` to the `NodeName` line in
   `roles/slurm/templates/slurm.conf.j2` if you also want cores reserved
   for the OS.
-- **Accounting**: the cluster is registered with `sacctmgr add cluster`, but
-  no accounts/users/QOS/limits are created (`AccountingStorageEnforce` is
-  left unset), so any local Linux user can submit jobs without extra setup.
-  Run `sacctmgr add account ...` / `add user ...` yourself if you want
-  per-user limits later.
+- **Accounting**: the cluster is registered with `sacctmgr add cluster`, and
+  `AccountingStorageEnforce=associations,limits,qos` is set in `slurm.conf`,
+  which means a user needs an association before they can submit *any*
+  job — add one per user with `sacctmgr add account <name>` and
+  `sacctmgr add user <user> account=<name>` before they try `sbatch`, or
+  jobs will be rejected.
 - **PAM job restriction / multi-user SSH**: not configured, since this is a
   personal single-node setup. Look at `pam_slurm_adopt` if you ever want to
   restrict SSH access to nodes with a running job for that user.
@@ -161,18 +147,7 @@ up to a minute for delivery after a job event.
   -> `slurmctld` -> `slurmd`). Versions are pinned rather than
   auto-resolved, so check the upstream release pages yourself when you
   want to move to a newer one.
-
-## Releases
-
-Versioning and `CHANGELOG.md` are managed by
-[release-please](https://github.com/googleapis/release-please), configured
-via `release-please-config.json` / `.release-please-manifest.json` and run
-by `.github/workflows/release-please.yml` on every push to `main`. It needs
-a GitHub remote to actually open release PRs — until this repo is pushed
-somewhere, the workflow file just sits there inert.
-
-release-please derives version bumps from
-[Conventional Commits](https://www.conventionalcommits.org/), so commit
-messages need a type prefix: `feat:` (minor bump), `fix:` (patch bump),
-and non-release types like `chore:`, `docs:`, `ci:`, `refactor:`. Breaking
-changes: `feat!:` / a `BREAKING CHANGE:` footer.
+- **GPU support was added after Slurm was already built**: if `slurmd
+  --version` already matches `slurm_version` from before GPU support
+  existed, the build-skip logic won't know to rebuild with NVML support.
+  Set `slurm_force_rebuild: true` for one run to force it.
