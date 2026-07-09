@@ -161,3 +161,18 @@ up to a minute for delivery after a job event.
   -> `slurmctld` -> `slurmd`). Versions are pinned rather than
   auto-resolved, so check the upstream release pages yourself when you
   want to move to a newer one.
+
+## Releases
+
+Versioning and `CHANGELOG.md` are managed by
+[release-please](https://github.com/googleapis/release-please), configured
+via `release-please-config.json` / `.release-please-manifest.json` and run
+by `.github/workflows/release-please.yml` on every push to `main`. It needs
+a GitHub remote to actually open release PRs — until this repo is pushed
+somewhere, the workflow file just sits there inert.
+
+release-please derives version bumps from
+[Conventional Commits](https://www.conventionalcommits.org/), so commit
+messages need a type prefix: `feat:` (minor bump), `fix:` (patch bump),
+and non-release types like `chore:`, `docs:`, `ci:`, `refactor:`. Breaking
+changes: `feat!:` / a `BREAKING CHANGE:` footer.
