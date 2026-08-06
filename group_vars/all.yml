@@ -14,6 +14,10 @@ slurm_version: "26.05.1"
 # Force a rebuild even if `slurmd --version` already matches slurm_version
 # (e.g. after changing configure flags or build dependencies).
 slurm_force_rebuild: false
+# Also build/install the contrib tools (make contrib && make install-contrib):
+# nss_slurm, seff, sgather, sjobexit, pam_slurm_adopt, the Perl API, etc.
+# Only runs when a (re)build actually happens -- see slurm_force_rebuild.
+slurm_build_contrib: true
 
 slurm_src_dir: /usr/local/src/slurm
 # /usr/local so binaries land in /usr/local/bin & /usr/local/sbin, which are

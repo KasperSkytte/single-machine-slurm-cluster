@@ -96,6 +96,27 @@
     - restart slurmctld
     - restart slurmd
 
+- name: Install Perl dev headers (needed for Slurm's contrib Perl API)
+  ansible.builtin.apt:
+    name: libperl-dev
+    state: present
+  when: slurm_build_contrib
+
+# contribs/ includes nss_slurm, seff, sgather, sjobexit, pam_slurm_adopt,
+# the Perl API, torque wrappers, etc. Same rebuild logic as the main
+# build above: only runs when a (re)build actually happens, so turning
+# this on after Slurm's already built at the same version needs
+# slurm_force_rebuild: true once too.
+- name: Build and install Slurm contrib tools
+  ansible.builtin.shell: |
+    set -e
+    make -j contrib
+    make install-contrib
+  args:
+    chdir: "{{ slurm_src_dir }}/slurm-{{ slurm_version }}"
+    executable: /bin/bash
+  when: slurm_build_contrib and _slurm_needs_build
+
 - name: Configure dynamic linker for Slurm libraries
   ansible.builtin.template:
     src: ld-slurm.conf.j2

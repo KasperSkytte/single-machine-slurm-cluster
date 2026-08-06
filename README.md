@@ -9,7 +9,8 @@ whatever SMTP account you give it.
 ## What it does
 
 - Builds Slurm and slurm-mail from source, at whatever version you pin in
-  `group_vars/all.yml`.
+  `group_vars/all.yml`, plus the contrib tools (`seff`, `pam_slurm_adopt`,
+  the Perl API, ...) unless you set `slurm_build_contrib: false`.
 - Reserves `mem_reserved_gb` of RAM for the host via cgroups, so jobs can't
   eat all of it.
 - Detects whether an NVIDIA GPU is present, then installs drivers, container
@@ -67,8 +68,8 @@ skip the rebuild unless `slurm_version` changed or you set
   that too.
 - No SSH/PAM restrictions — anyone with an account on the box can log in
   and submit jobs, with running jobs or not - so don't run things outside of slurm jobs!
-- Turned on GPU support after Slurm was already built? It won't rebuild
-  on its own since the version hasn't changed — set
-  `slurm_force_rebuild: true` once to pick up NVML support.
+- Turned on GPU support or contrib tools after Slurm was already built?
+  It won't rebuild on its own since the version hasn't changed — set
+  `slurm_force_rebuild: true` once to pick it up.
 - Versions are pinned, not auto-updated. Bump `slurm_version` or
   `slurm_mail_version` yourself when you want something newer.
