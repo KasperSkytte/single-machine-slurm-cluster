@@ -32,7 +32,7 @@ GresTypes=gpu
 
 {% if slurm_job_container_tmpfs_enable %}
 # Private per-job /tmp, /var/tmp, /dev/shm (namespace/tmpfs plugin -- this
-# was named job_container/tmpfs before Slurm 25.11). See job_container.conf.
+# was named JobContainerType=job_container/tmpfs before Slurm 25.11). See job_container.conf.
 PrologFlags=Contain
 NamespaceType=namespace/tmpfs
 {% endif %}
