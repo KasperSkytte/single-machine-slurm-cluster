@@ -3,7 +3,10 @@
   ansible.builtin.apt:
     update_cache: true
     cache_valid_time: 3600
-    name:
+    name: "{{ _slurm_build_packages + slurm_build_packages_extra }}"
+    state: present
+  vars:
+    _slurm_build_packages:
       - build-essential
       - fakeroot
       - git
@@ -20,7 +23,6 @@
       - liblz4-dev
       - libsystemd-dev
       - libdbus-1-dev
-    state: present
 
 - name: Create slurm group
   ansible.builtin.group:
@@ -80,11 +82,7 @@
 - name: Configure, build and install Slurm
   ansible.builtin.shell: |
     set -e
-    ./configure \
-      --prefix={{ slurm_prefix }} \
-      --sysconfdir={{ slurm_sysconfdir }} \
-      --with-munge \
-      --enable-pkgconfig
+    ./configure {{ (slurm_configure_options + slurm_configure_extra_options) | map('quote') | join(' ') }}
     make -j
     make install
   args:

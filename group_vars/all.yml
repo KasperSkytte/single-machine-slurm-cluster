@@ -19,6 +19,32 @@ slurm_force_rebuild: false
 # Only runs when a (re)build actually happens -- see slurm_force_rebuild.
 slurm_build_contrib: true
 
+# ./configure flags for the Slurm build. Change these (or add your own via
+# slurm_configure_extra_options below) and set slurm_force_rebuild: true
+# once to pick them up -- the version alone won't have changed.
+slurm_configure_options:
+  - "--prefix={{ slurm_prefix }}"
+  - "--sysconfdir={{ slurm_sysconfdir }}"
+  - "--with-munge"
+  - "--enable-pkgconfig"
+# Appended to the list above, so you can add flags without restating the
+# defaults, e.g.:
+#   slurm_configure_extra_options:
+#     - "--with-hdf5=/usr/bin/h5cc"
+#     - "--disable-x11"
+slurm_configure_extra_options:
+  - "--with-lua"
+
+# Extra apt packages to install before building, for optional features that
+# configure only enables when their dev headers are present. For example lua support
+# to be able to use JobSubmitPlugins=lua
+#   slurm_build_packages_extra:
+#     - liblua5.4-dev
+# Same caveat: needs slurm_force_rebuild: true once if Slurm is already
+# built at this version.
+slurm_build_packages_extra:
+  - liblua5.4-dev
+
 slurm_src_dir: /usr/local/src/slurm
 # /usr/local so binaries land in /usr/local/bin & /usr/local/sbin, which are
 # already on $PATH for everyone -- no separate profile.d shim needed.

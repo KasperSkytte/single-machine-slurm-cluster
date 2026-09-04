@@ -68,6 +68,10 @@ skip the rebuild unless `slurm_version` changed or you set
   that too.
 - No SSH/PAM restrictions — anyone with an account on the box can log in
   and submit jobs, with running jobs or not - so don't run things outside of slurm jobs!
+- Slurm's `./configure` flags live in `slurm_configure_options`; add to them
+  with `slurm_configure_extra_options` and pull in any extra dev packages a
+  feature needs with `slurm_build_packages_extra` (Lua support, for
+  instance, is just `liblua5.4-dev` being installed at build time).
 - Turned on GPU support or contrib tools after Slurm was already built?
   It won't rebuild on its own since the version hasn't changed — set
   `slurm_force_rebuild: true` once to pick it up.
