@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.0](https://github.com/KasperSkytte/single-machine-slurm-cluster/compare/slurm-ansible-v1.1.0...slurm-ansible-v1.2.0) (2026-09-04)
+
+
+### Features
+
+* build and install Slurm's contrib tools ([6c806fa](https://github.com/KasperSkytte/single-machine-slurm-cluster/commit/6c806fa0215ae262b9fadf1a422a266b84daed72))
+* make slurm-mail optional ([0c81657](https://github.com/KasperSkytte/single-machine-slurm-cluster/commit/0c8165773c6f54d3ed95e407e90efd8f1d688f87))
+
 ## [1.1.0](https://github.com/KasperSkytte/single-machine-slurm-cluster/compare/slurm-ansible-v1.0.0...slurm-ansible-v1.1.0) (2026-07-09)
 
 
