@@ -16,7 +16,7 @@
     state: started
 
 - name: Create Slurm accounting database
-  community.mysql.mysql_db:
+  ansible.mariadb.mariadb_db:
     name: "{{ mysql_slurm_db }}"
     encoding: utf8mb4
     login_user: root
@@ -24,7 +24,7 @@
     state: present
 
 - name: Create Slurm accounting DB user
-  community.mysql.mysql_user:
+  ansible.mariadb.mariadb_user:
     name: "{{ mysql_slurm_user }}"
     password: "{{ vault_mysql_slurm_password }}"
     priv: "{{ mysql_slurm_db }}.*:ALL"
